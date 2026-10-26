@@ -8,6 +8,15 @@ A JUCE 8 VST3 + Standalone application that provides a software remote controlle
 
 **0.1.0** — Initial public release
 
+## Downloads
+
+Prebuilt **Windows x64** Standalone and VST3: **[Releases](https://github.com/harisk73/rm1x-controller/releases)** · **[v0.1.0](https://github.com/harisk73/rm1x-controller/releases/tag/v0.1.0)**
+
+- Standalone: unzip and run `RM1x Controller.exe`
+- VST3: unzip `RM1x Controller.vst3` into a VST3 folder (e.g. `%USERPROFILE%\Documents\VST3`) and rescan in your DAW
+
+Or build from source below.
+
 ## Features
 
 - **MIDI device management** — select MIDI In/Out with activity LEDs
