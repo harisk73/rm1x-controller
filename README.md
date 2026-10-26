@@ -4,6 +4,11 @@
 
 A JUCE 8 VST3 + Standalone application that provides a software remote controller for the Yamaha RM1x groovebox. Designed to replace broken physical buttons (Section, Mute, Track) while the unit’s sound engine and MIDI functionality remain intact.
 
+## UI
+
+![RM1x Controller panel](docs/images/rm1x-controller-ui.png)
+
+
 ## Version
 
 **0.1.0** — Initial public release
