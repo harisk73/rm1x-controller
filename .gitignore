@@ -1,0 +1,58 @@
+# Build directories
+build/
+cmake-build-*/
+Build/
+Builds/
+
+# IDE files
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.sln.docstates
+*.xcuserstate
+xcuserdata/
+
+# Compiled binaries
+*.exe
+*.dll
+*.dylib
+*.so
+*.a
+*.lib
+*.app
+*.vst3
+*.component
+
+# JUCE
+libs/
+JuceLibraryCode/
+
+# OS files
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+install_manifest.txt
+CTestTestfile.cmake
+_deps/
+
+# Backup files
+*.bak
+*.orig
+
+# Release archives / packaged source
+*.tar.gz
+*.zip
+dist/
+uploads/
+
+# Local packaging output
+rm1x-controller-*-src.tar.gz
+rm1x-controller-*-src.zip
