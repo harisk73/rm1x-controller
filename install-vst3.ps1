@@ -2,7 +2,7 @@
 # DAW: any host that scans Documents\VST3 or Common Files\VST3
 
 Write-Host "========================================" -ForegroundColor Cyan
-Write-Host "RM1x Controller v0.2.0 - VST3 Installation" -ForegroundColor Cyan
+Write-Host "RM1x Controller v0.2.1 - VST3 Installation" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 

@@ -87,6 +87,13 @@ RM1xControllerAudioProcessorEditor::RM1xControllerAudioProcessorEditor(RM1xContr
 
 RM1xControllerAudioProcessorEditor::~RM1xControllerAudioProcessorEditor()
 {
+#if JUCE_STANDALONE_APPLICATION
+    // Standalone: explicitly shutdown MIDI before audio device closes
+    // This ensures ASIO/WASAPI device and exclusive MIDI ports are released
+    // so Studio One or other DAWs can acquire them immediately
+    audioProcessor.shutdownMidiResources();
+#endif
+    
     audioProcessor.onMidiInputActivity = nullptr;
     audioProcessor.onSectionChanged = nullptr;
     audioProcessor.onMuteChanged = nullptr;

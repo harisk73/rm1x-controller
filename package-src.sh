@@ -2,7 +2,7 @@
 # Package source distribution for RM1x Controller
 set -euo pipefail
 
-VERSION="0.2.0"
+VERSION="0.2.1"
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 OUTDIR="${1:-$ROOT}"
 TARBALL="rm1x-controller-${VERSION}-src.tar.gz"

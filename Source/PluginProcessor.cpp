@@ -11,15 +11,27 @@ RM1xControllerAudioProcessor::RM1xControllerAudioProcessor()
 
 RM1xControllerAudioProcessor::~RM1xControllerAudioProcessor()
 {
-    // Stop MIDI clock
+    // CRITICAL: Release MIDI resources BEFORE processor is destroyed
+    // to prevent device locks on Windows (ASIO/WASAPI, exclusive USB-MIDI ports)
+    
+    // Stop MIDI clock timer to prevent callbacks during teardown
     stopMidiClock();
     
-    // Stop MIDI input before processor is destroyed
+    // Close MIDI input (exclusive port) - must stop before reset
     if (midiInput)
     {
         midiInput->stop();
         midiInput.reset();
     }
+    
+    // Close MIDI output (exclusive port) - release shared_ptr
+    if (midiOutput)
+    {
+        midiOutput.reset();
+    }
+    
+    // For Standalone builds, MIDI is now released before
+    // the StandaloneFilterWindow's AudioDeviceManager shutdown
 }
 
 const juce::String RM1xControllerAudioProcessor::getName() const
@@ -80,6 +92,22 @@ void RM1xControllerAudioProcessor::prepareToPlay(double sampleRate, int samplesP
 
 void RM1xControllerAudioProcessor::releaseResources()
 {
+    // Called when audio device is being closed or reconfigured
+    // For Standalone: aggressively release MIDI resources when audio device closes
+    // to prevent device locks on Windows
+    
+    // Stop MIDI clock to prevent any pending callbacks
+    stopMidiClock();
+    
+    // Stop and close MIDI input (exclusive port)
+    // This ensures USB-MIDI devices like H4MIDI-WC are released
+    if (midiInput)
+    {
+        midiInput->stop();
+    }
+    
+    // Note: We don't reset() the shared_ptr here to allow reconnection
+    // The destructor will fully release the MIDI output
 }
 
 bool RM1xControllerAudioProcessor::isBusesLayoutSupported(const BusesLayout& layouts) const
@@ -274,6 +302,28 @@ void RM1xControllerAudioProcessor::stopMidiClock()
     }
     
     sentClockStart.store(false);
+}
+
+void RM1xControllerAudioProcessor::shutdownMidiResources()
+{
+    // Explicit shutdown of MIDI resources for Standalone mode
+    // Call this before the audio device manager shuts down
+    
+    // Stop MIDI clock timer
+    stopMidiClock();
+    
+    // Stop and close MIDI input (releases exclusive port on Windows)
+    if (midiInput)
+    {
+        midiInput->stop();
+        midiInput.reset();
+    }
+    
+    // Close MIDI output (releases exclusive port on Windows)
+    if (midiOutput)
+    {
+        midiOutput.reset();
+    }
 }
 
 void RM1xControllerAudioProcessor::hiResTimerCallback()

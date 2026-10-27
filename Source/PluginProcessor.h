@@ -52,6 +52,9 @@ public:
     void stopMidiClock();
     bool isMidiClockRunning() const { return midiClockRunning; }
     
+    // Standalone-only: explicit shutdown to release MIDI before audio device closes
+    void shutdownMidiResources();
+    
     // MIDI input callbacks
     struct PartState
     {
