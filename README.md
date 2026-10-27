@@ -10,11 +10,11 @@ A JUCE 8 VST3 + Standalone application that provides a software remote controlle
 
 ## Version
 
-**0.2.1** — Standalone releases ASIO/WASAPI + exclusive MIDI on quit
+**0.2.2** — Knob backgrounds are true circles (Cutoff etc.), slightly larger
 
 ## Downloads
 
-Prebuilt **Windows x64** Standalone and VST3: **[Releases](https://github.com/harisk73/rm1x-controller/releases)** · **[v0.2.1](https://github.com/harisk73/rm1x-controller/releases/tag/v0.2.1)**
+Prebuilt **Windows x64** Standalone and VST3: **[Releases](https://github.com/harisk73/rm1x-controller/releases)** · **[v0.2.2](https://github.com/harisk73/rm1x-controller/releases/tag/v0.2.2)**
 
 - Standalone: unzip and run `RM1x Controller.exe`
 - VST3: unzip `RM1x Controller.vst3` into a VST3 folder (e.g. `%USERPROFILE%\Documents\VST3`) and rescan in your DAW
@@ -36,6 +36,10 @@ Or build from source below.
 - **MIDI Clock tempo** — send MIDI Clock (`F8`) to drive the RM1x; hardware must be set to **Sync = MIDI**
 - **Exclusive MIDI** — host and plugin avoid double-opening the same port
 - **Panel-mirror UI** — dark industrial aesthetic with purple-blue active states inspired by the hardware
+
+### What’s new in 0.2.2
+
+- Knob backgrounds (Cutoff, Resonance, etc.): draw as proper circles instead of stretched ovals, and slightly larger
 
 ### What’s new in 0.2.1
 

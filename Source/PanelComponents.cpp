@@ -14,21 +14,28 @@ void RM1xLookAndFeel::drawRotarySlider(juce::Graphics& g, int x, int y, int widt
                                        float sliderPos, float rotaryStartAngle, float rotaryEndAngle,
                                        juce::Slider& slider)
 {
-    auto bounds = juce::Rectangle<int>(x, y, width, height).toFloat().reduced(10);
-    auto radius = juce::jmin(bounds.getWidth(), bounds.getHeight()) / 2.0f;
+    auto bounds = juce::Rectangle<int>(x, y, width, height).toFloat();
+    
+    // Calculate the largest circle that fits in the bounds (with reduced inset)
+    auto inset = 5.0f;
+    auto diameter = juce::jmin(bounds.getWidth(), bounds.getHeight()) - (inset * 2.0f);
+    auto radius = diameter / 2.0f;
     auto centreX = bounds.getCentreX();
     auto centreY = bounds.getCentreY();
-    auto angle = rotaryStartAngle + sliderPos * (rotaryEndAngle - rotaryStartAngle);
     
+    // Draw circular background (not ellipse) centered in bounds
     g.setColour(findColour(juce::Slider::rotarySliderOutlineColourId));
-    g.fillEllipse(bounds);
+    g.fillEllipse(centreX - radius, centreY - radius, diameter, diameter);
     
+    // Draw value arc
+    auto angle = rotaryStartAngle + sliderPos * (rotaryEndAngle - rotaryStartAngle);
     g.setColour(findColour(juce::Slider::rotarySliderFillColourId));
     juce::Path arc;
     arc.addCentredArc(centreX, centreY, radius * 0.8f, radius * 0.8f, 0.0f, 
                      rotaryStartAngle, angle, true);
     g.strokePath(arc, juce::PathStrokeType(3.0f));
     
+    // Draw pointer
     juce::Path pointer;
     auto pointerLength = radius * 0.6f;
     auto pointerThickness = 2.5f;
