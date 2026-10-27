@@ -109,10 +109,19 @@ public:
     
     void setMuteState(int track, bool muted);
     bool getMuteState(int track) const;
+    void setVoiceName(int track, const juce::String& name);
+    void setActiveState(int track, bool active);
+    void setSelectedTrack(int track);
+    void setSoloState(int track, bool solo);
     
     std::function<void(int, bool)> onMuteToggle;
     
 private:
     std::array<std::unique_ptr<juce::TextButton>, 16> buttons;
+    std::array<std::unique_ptr<juce::Label>, 16> voiceLabels;
     std::array<bool, 16> muteStates = {};
+    std::array<bool, 16> activeStates = {};
+    std::array<bool, 16> soloStates = {};
+    std::array<juce::String, 16> voiceNames;
+    int selectedTrack = -1;
 };

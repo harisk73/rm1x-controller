@@ -1,5 +1,6 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
+#include "VoiceNames.h"
 
 RM1xControllerAudioProcessor::RM1xControllerAudioProcessor()
     : AudioProcessor(BusesProperties()
@@ -338,10 +339,43 @@ void RM1xControllerAudioProcessor::handleIncomingMidiMessage(juce::MidiInput* so
             // XG Multi Part param: F0 43 1n 4C 08 pp aa vv F7
             if (size >= 7 && data[3] == 0x08)
             {
-                // Part parameter - silently store for future use
-                // data[4] = part (0x00-0x0F for parts 1-16)
-                // data[5] = address offset
-                // data[6] = value
+                int part = data[4] & 0x0F; // Part 0-15 (channels 1-16)
+                int address = data[5];
+                int value = data[6];
+                
+                juce::ScopedLock lock(partStatesLock);
+                
+                // Parse Multi Part parameters
+                if (address == 0x01) // Bank MSB
+                {
+                    partStates[part].bankMSB = value;
+                }
+                else if (address == 0x02) // Bank LSB
+                {
+                    partStates[part].bankLSB = value;
+                }
+                else if (address == 0x03) // Program Number
+                {
+                    partStates[part].program = value;
+                    partStates[part].hasVoice = true;
+                    
+                    // Update voice name
+                    partStates[part].voiceName = RM1x::VoiceNames::getVoiceName(
+                        partStates[part].bankMSB,
+                        partStates[part].bankLSB,
+                        partStates[part].program
+                    );
+                    
+                    // Notify UI
+                    if (onPartVoiceChanged)
+                    {
+                        juce::MessageManager::callAsync([this, part, voiceName = partStates[part].voiceName]()
+                        {
+                            if (onPartVoiceChanged)
+                                onPartVoiceChanged(part, voiceName);
+                        });
+                    }
+                }
             }
         }
         // Check for Section Control SysEx
@@ -356,9 +390,57 @@ void RM1xControllerAudioProcessor::handleIncomingMidiMessage(juce::MidiInput* so
         int ccNumber = message.getControllerNumber();
         int value = message.getControllerValue();
         
-        if (ccNumber == 11)
+        if (ccNumber == 11) // Expression (Mute)
         {
             parseExpressionCC(channel, value);
+        }
+        else if (ccNumber == 0) // Bank MSB
+        {
+            int part = channel - 1;
+            if (part >= 0 && part < 16)
+            {
+                juce::ScopedLock lock(partStatesLock);
+                partStates[part].bankMSB = value;
+            }
+        }
+        else if (ccNumber == 32) // Bank LSB
+        {
+            int part = channel - 1;
+            if (part >= 0 && part < 16)
+            {
+                juce::ScopedLock lock(partStatesLock);
+                partStates[part].bankLSB = value;
+            }
+        }
+    }
+    else if (message.isProgramChange())
+    {
+        int channel = message.getChannel();
+        int program = message.getProgramChangeNumber();
+        int part = channel - 1;
+        
+        if (part >= 0 && part < 16)
+        {
+            juce::ScopedLock lock(partStatesLock);
+            partStates[part].program = program;
+            partStates[part].hasVoice = true;
+            
+            // Update voice name
+            partStates[part].voiceName = RM1x::VoiceNames::getVoiceName(
+                partStates[part].bankMSB,
+                partStates[part].bankLSB,
+                partStates[part].program
+            );
+            
+            // Notify UI
+            if (onPartVoiceChanged)
+            {
+                juce::MessageManager::callAsync([this, part, voiceName = partStates[part].voiceName]()
+                {
+                    if (onPartVoiceChanged)
+                        onPartVoiceChanged(part, voiceName);
+                });
+            }
         }
     }
 }
@@ -396,6 +478,25 @@ void RM1xControllerAudioProcessor::parseExpressionCC(int channel, int value)
             if (onMuteChanged)
                 onMuteChanged(channel, isMuted);
         });
+    }
+}
+
+RM1xControllerAudioProcessor::PartState RM1xControllerAudioProcessor::getPartState(int part) const
+{
+    if (part >= 0 && part < 16)
+    {
+        juce::ScopedLock lock(partStatesLock);
+        return partStates[part];
+    }
+    return PartState();
+}
+
+void RM1xControllerAudioProcessor::clearAllPartStates()
+{
+    juce::ScopedLock lock(partStatesLock);
+    for (auto& state : partStates)
+    {
+        state = PartState();
     }
 }
 

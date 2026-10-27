@@ -5,5 +5,5 @@ namespace ProjectInfo
     const char* const projectName    = "RM1xController";
     const char* const companyName    = "RM1x";
     const char* const versionString  = "${PROJECT_VERSION}";
-    const int         versionNumber  = 0x000100;
+    const int         versionNumber  = 0x000200;
 }

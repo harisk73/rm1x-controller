@@ -53,6 +53,8 @@ _deps/
 dist/
 uploads/
 
-# Local packaging output
+# Local packaging / deploy markers
 rm1x-controller-*-src.tar.gz
 rm1x-controller-*-src.zip
+ORIGIN_SHA.txt
+DEPLOYED_SHA.txt

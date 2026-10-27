@@ -46,36 +46,82 @@ void RM1xLookAndFeel::drawButtonBackground(juce::Graphics& g, juce::Button& butt
 {
     auto bounds = button.getLocalBounds().toFloat().reduced(2.0f);
     
-    // Active state: bright purple-blue with strong visibility
-    if (shouldDrawButtonAsDown || button.getToggleState())
+    // Check for custom button states (for Mute row)
+    bool isMuted = button.getProperties()["muted"];
+    bool isActive = button.getProperties()["active"];
+    bool isSelected = button.getProperties()["selected"];
+    bool isSolo = button.getProperties()["solo"];
+    
+    // Determine button color based on state priority: Solo > Mute > Selected > Active > Inactive
+    juce::Colour fillColour;
+    juce::Colour borderColour;
+    bool showBorder = false;
+    
+    if (isSolo)
     {
-        // Bright purple-blue fill for active state
-        g.setColour(juce::Colour(0xff6a5acd));
-        g.fillRoundedRectangle(bounds, 3.0f);
+        // Solo state: magenta fill
+        fillColour = juce::Colour(0xffff00ff); // Magenta
+        borderColour = juce::Colour(0xffff6fff);
+        showBorder = true;
+    }
+    else if (isMuted)
+    {
+        // Muted state: amber/orange fill
+        fillColour = juce::Colour(0xfff06030); // Amber/orange
+        borderColour = juce::Colour(0xffff8050);
+        showBorder = true;
+    }
+    else if (isSelected)
+    {
+        // Selected track: purple outline only on dark background
+        fillColour = isActive ? juce::Colour(0xff2a4a4a) : juce::Colour(0xff1a1a1a); // Teal-ish or dark
+        borderColour = juce::Colour(0xff6a5acd); // Purple outline
+        showBorder = true;
+    }
+    else if (isActive)
+    {
+        // Active/unmuted with voice: teal/cyan
+        fillColour = juce::Colour(0xff2a5a5a); // Teal/cyan
+        borderColour = juce::Colour(0xff4a9a9a);
+        showBorder = true;
+    }
+    else if (shouldDrawButtonAsDown || button.getToggleState())
+    {
+        // Legacy active state for non-mute buttons: bright purple-blue
+        fillColour = juce::Colour(0xff6a5acd);
+        borderColour = juce::Colour(0xff9a8aff);
+        showBorder = true;
+    }
+    else
+    {
+        // Inactive state: dark background with visible border
+        fillColour = juce::Colour(0xff1a1a1a);
+        borderColour = juce::Colour(0xff444444); // Visible gray border
         
-        // Bright purple glow border for active state
-        g.setColour(juce::Colour(0xff9a8aff).withAlpha(0.9f));
-        g.drawRoundedRectangle(bounds, 3.0f, 2.5f);
+        if (shouldDrawButtonAsHighlighted)
+            fillColour = fillColour.brighter(0.3f);
         
-        // Set button text to bright white for active state
+        showBorder = true;
+    }
+    
+    // Draw fill
+    g.setColour(fillColour);
+    g.fillRoundedRectangle(bounds, 3.0f);
+    
+    // Draw border
+    if (showBorder)
+    {
+        g.setColour(borderColour.withAlpha(0.9f));
+        g.drawRoundedRectangle(bounds, 3.0f, 2.0f);
+    }
+    
+    // Set text color
+    if (isMuted || isSolo || isActive || button.getToggleState())
+    {
         button.setColour(juce::TextButton::textColourOnId, juce::Colours::white);
     }
     else
     {
-        // Inactive state: dark background
-        auto baseColour = juce::Colour(0xff1a1a1a);  // Very dark for clear contrast
-        
-        if (shouldDrawButtonAsHighlighted)
-            baseColour = baseColour.brighter(0.3f);
-        
-        g.setColour(baseColour);
-        g.fillRoundedRectangle(bounds, 3.0f);
-        
-        // Dim border for inactive state
-        g.setColour(juce::Colour(0xff444444));
-        g.drawRoundedRectangle(bounds, 3.0f, 1.0f);
-        
-        // Set button text to light grey for inactive state
         button.setColour(juce::TextButton::textColourOffId, juce::Colours::lightgrey);
     }
 }
@@ -102,16 +148,18 @@ void MidiLED::paint(juce::Graphics& g)
 {
     auto bounds = getLocalBounds();
     
-    g.setColour(juce::Colours::white);
-    g.setFont(juce::FontOptions(10.0f));
-    g.drawText(labelText, bounds.removeFromTop(15), juce::Justification::centred);
-    
-    auto ledBounds = bounds.reduced(5);
+    // Draw LED circle in top 20x20 area
+    auto ledBounds = bounds.removeFromTop(20);
     g.setColour(isLit ? juce::Colour(0xff00ff00) : juce::Colour(0xff003300));
     g.fillEllipse(ledBounds.toFloat());
     
     g.setColour(juce::Colours::darkgrey);
     g.drawEllipse(ledBounds.toFloat(), 1.0f);
+    
+    // Draw label below LED
+    g.setColour(juce::Colours::white);
+    g.setFont(juce::FontOptions(8.0f));
+    g.drawText(labelText, bounds, juce::Justification::centredTop);
 }
 
 void MidiLED::flash()
@@ -295,21 +343,40 @@ MuteButtonRow::MuteButtonRow()
         {
             bool muted = buttons[i]->getToggleState();
             muteStates[i] = muted;
+            buttons[i]->getProperties().set("muted", muted);
+            buttons[i]->repaint();
             if (onMuteToggle)
                 onMuteToggle(i + 1, muted);
         };
+        
+        voiceLabels[i] = std::make_unique<juce::Label>();
+        voiceLabels[i]->setFont(juce::FontOptions(10.0f));
+        voiceLabels[i]->setJustificationType(juce::Justification::centred);
+        voiceLabels[i]->setColour(juce::Label::textColourId, juce::Colour(0xff888888));
+        voiceLabels[i]->setText("-", juce::dontSendNotification);
+        addAndMakeVisible(voiceLabels[i].get());
     }
 }
 
 void MuteButtonRow::resized()
 {
     auto bounds = getLocalBounds();
-    bounds.removeFromTop(22);
+    bounds.removeFromTop(22); // Remove label area
+    auto voiceLabelHeight = 16;
+    
     int buttonWidth = bounds.getWidth() / 16;
+    int startY = 22; // Start after label area
     
     for (int i = 0; i < 16; ++i)
     {
-        buttons[i]->setBounds(i * buttonWidth, 22, buttonWidth - 3, bounds.getHeight() - 22);
+        int x = i * buttonWidth;
+        int width = buttonWidth - 3;
+        
+        // Voice label at bottom
+        voiceLabels[i]->setBounds(x, startY + bounds.getHeight() - voiceLabelHeight, width, voiceLabelHeight);
+        
+        // Button between label area and voice label
+        buttons[i]->setBounds(x, startY, width, bounds.getHeight() - voiceLabelHeight);
     }
 }
 
@@ -324,8 +391,11 @@ void MuteButtonRow::setMuteState(int track, bool muted)
 {
     if (track >= 1 && track <= 16)
     {
-        muteStates[track - 1] = muted;
-        buttons[track - 1]->setToggleState(muted, juce::dontSendNotification);
+        int index = track - 1;
+        muteStates[index] = muted;
+        buttons[index]->setToggleState(muted, juce::dontSendNotification);
+        buttons[index]->getProperties().set("muted", muted);
+        buttons[index]->repaint();
     }
 }
 
@@ -334,4 +404,56 @@ bool MuteButtonRow::getMuteState(int track) const
     if (track >= 1 && track <= 16)
         return muteStates[track - 1];
     return false;
+}
+
+void MuteButtonRow::setVoiceName(int track, const juce::String& name)
+{
+    if (track >= 0 && track < 16)
+    {
+        voiceNames[track] = name;
+        
+        // Truncate name if too long (8 chars max), use ASCII dash for unknown
+        juce::String displayName = name.isEmpty() ? "-" : name.substring(0, 8);
+        voiceLabels[track]->setText(displayName, juce::dontSendNotification);
+        voiceLabels[track]->setTooltip(name.isEmpty() ? "Trk " + juce::String(track + 1) : name);
+    }
+}
+
+void MuteButtonRow::setActiveState(int track, bool active)
+{
+    if (track >= 0 && track < 16)
+    {
+        activeStates[track] = active;
+        buttons[track]->getProperties().set("active", active);
+        buttons[track]->repaint();
+    }
+}
+
+void MuteButtonRow::setSelectedTrack(int track)
+{
+    // Clear previous selection
+    if (selectedTrack >= 0 && selectedTrack < 16)
+    {
+        buttons[selectedTrack]->getProperties().set("selected", false);
+        buttons[selectedTrack]->repaint();
+    }
+    
+    selectedTrack = track;
+    
+    // Set new selection
+    if (selectedTrack >= 0 && selectedTrack < 16)
+    {
+        buttons[selectedTrack]->getProperties().set("selected", true);
+        buttons[selectedTrack]->repaint();
+    }
+}
+
+void MuteButtonRow::setSoloState(int track, bool solo)
+{
+    if (track >= 0 && track < 16)
+    {
+        soloStates[track] = solo;
+        buttons[track]->getProperties().set("solo", solo);
+        buttons[track]->repaint();
+    }
 }

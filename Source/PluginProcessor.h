@@ -53,11 +53,24 @@ public:
     bool isMidiClockRunning() const { return midiClockRunning; }
     
     // MIDI input callbacks
+    struct PartState
+    {
+        int bankMSB = 0;
+        int bankLSB = 0;
+        int program = 0;
+        bool hasVoice = false;
+        juce::String voiceName;
+    };
+    
     std::function<void()> onMidiInputActivity;
     std::function<void(int)> onSectionChanged;
     std::function<void(int, bool)> onMuteChanged;
     std::function<void(int)> onTrackChanged;
     std::function<void(const juce::String&)> onDumpReceived;
+    std::function<void(int, const juce::String&)> onPartVoiceChanged;
+    
+    PartState getPartState(int part) const;
+    void clearAllPartStates();
 
 private:
     void handleIncomingMidiMessage(juce::MidiInput* source, const juce::MidiMessage& message) override;
@@ -73,6 +86,9 @@ private:
     std::atomic<int> currentTempoBPM { 120 };
     std::atomic<bool> midiClockRunning { false };
     std::atomic<bool> sentClockStart { false };
+    
+    std::array<PartState, 16> partStates;
+    juce::CriticalSection partStatesLock;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(RM1xControllerAudioProcessor)
 };

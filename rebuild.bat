@@ -3,7 +3,7 @@ REM RM1x Controller - Windows Build Script (Orbiter-style)
 REM Targets: VS BuildTools 2022, Ninja, x64 Release
 
 echo ============================================
-echo RM1x Controller v0.1.0 - Windows Build
+echo RM1x Controller v0.2.0 - Windows Build
 echo ============================================
 echo.
 

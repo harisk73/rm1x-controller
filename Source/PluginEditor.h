@@ -78,6 +78,14 @@ private:
     std::unique_ptr<juce::Slider> tempoSlider;
     std::unique_ptr<juce::Label> tempoLabel;
     std::unique_ptr<juce::Label> tempoValueLabel;
+    
+    std::unique_ptr<juce::TextButton> muteAllButton;
+    std::unique_ptr<juce::TextButton> mute18Button;
+    std::unique_ptr<juce::TextButton> mute916Button;
+    std::unique_ptr<juce::TextButton> clearMuteButton;
+    std::unique_ptr<juce::TextButton> soloButton;
+    
+    int soloTrack = -1;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(RM1xControllerAudioProcessorEditor)
 };

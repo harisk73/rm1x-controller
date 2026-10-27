@@ -24,39 +24,21 @@ cmake --build build --config Release -j$(nproc)
 ## Windows Build
 
 ### Requirements
-- Visual Studio 2022 Build Tools (with C++ workload)
-- Ninja build system (included with VS Build Tools)
-- CMake 3.22 or later
+- Visual Studio 2022 (Community or Professional)
+- CMake 3.15 or later
 - Git
 
 ### Build Steps
 
-**Option 1: Using rebuild.bat (recommended)**
-
 ```cmd
-rebuild.bat
+# Open "Developer Command Prompt for VS 2022"
+cmake -B build -G "Visual Studio 17 2022"
+cmake --build build --config Release
 ```
 
-**Option 2: Manual build**
-
-```cmd
-# Initialize VS Build Tools environment
-call "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\Tools\VsDevCmd.bat" -arch=x64
-
-# Create and enter build directory
-mkdir build
-cd build
-
-# Configure with Ninja
-cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release
-
-# Build
-ninja
-```
-
-Artifacts will be in `build\RM1xController_artefacts\`:
-- `VST3\RM1x Controller.vst3\` (VST3 plugin)
-- `Standalone\RM1x Controller.exe` (Standalone app)
+Artifacts will be in `build\RM1xController_artefacts\Release\`:
+- `RM1x Controller.vst3\` (VST3 plugin)
+- `RM1x Controller.exe` (Standalone app)
 
 ## macOS Build
 

@@ -14,7 +14,7 @@ RM1xController/
 ├── README.md                   # User documentation
 ├── BUILD.md                    # Build instructions
 ├── TESTING.md                  # Testing guide
-└── Resources/                  # App icons
+└── uploads/                    # Reference manuals (PDFs)
 ```
 
 ## Component Layers

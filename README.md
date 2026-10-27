@@ -8,14 +8,13 @@ A JUCE 8 VST3 + Standalone application that provides a software remote controlle
 
 ![RM1x Controller panel](docs/images/rm1x-controller-ui.png)
 
-
 ## Version
 
-**0.1.0** — Initial public release
+**0.2.0** — Voice names, mute helpers, master volume, UI polish
 
 ## Downloads
 
-Prebuilt **Windows x64** Standalone and VST3: **[Releases](https://github.com/harisk73/rm1x-controller/releases)** · **[v0.1.0](https://github.com/harisk73/rm1x-controller/releases/tag/v0.1.0)**
+Prebuilt **Windows x64** Standalone and VST3: **[Releases](https://github.com/harisk73/rm1x-controller/releases)** · **[v0.2.0](https://github.com/harisk73/rm1x-controller/releases/tag/v0.2.0)**
 
 - Standalone: unzip and run `RM1x Controller.exe`
 - VST3: unzip `RM1x Controller.vst3` into a VST3 folder (e.g. `%USERPROFILE%\Documents\VST3`) and rescan in your DAW
@@ -24,24 +23,26 @@ Or build from source below.
 
 ## Features
 
-- **MIDI device management** — select MIDI In/Out with activity LEDs
-- **Identity Request** — query a connected RM1x for device identification
+- **MIDI device management** — select MIDI In/Out with activity LEDs labeled **IN** / **OUT**
+- **Identity / Sync from RM1x** — query identity and pull pattern/voice state from the hardware
 - **Transport** — PLAY / STOP / CONTINUE (MIDI realtime FA / FC / FB)
 - **Section control (A–P)** — Section SysEx `F0 43 7E 00 ss 7F F7` (`ss` = `00`–`0F`)
 - **Track selection** — select active track (1–16) for voice parameter editing
+- **Voice names** — Bank + Program Change mapped to GM/XG display names on the mute row
 - **Expression Mute** — per-track mute via **CC#11 Expression** (`0` muted / `127` unmuted) — see caveat below
+- **Mute helpers** — Mute All, 1–8, 9–16, Clear, and Solo (muted channels show amber)
+- **Master Volume** — Universal SysEx Master Volume `F0 7F 7F 04 01 ll mm F7`
 - **Song / Style select** — MIDI Song Select (`F3`) for patterns 0–127
 - **MIDI Clock tempo** — send MIDI Clock (`F8`) to drive the RM1x; hardware must be set to **Sync = MIDI**
-- **MIDI In** — listen for identity replies, section/mute feedback, and pattern sync
+- **Exclusive MIDI** — host and plugin avoid double-opening the same port
 - **Panel-mirror UI** — dark industrial aesthetic with purple-blue active states inspired by the hardware
 
-### Keyboard modes
+### What’s new in 0.2.0
 
-The 26-key virtual keyboard (E2–F4) operates in three modes:
-
-1. **TRACK mode** (default) — white keys 1–16 select the current track for voice editing  
-2. **SECTION mode** — white keys trigger Section A–P via SysEx  
-3. **MUTE mode** — white keys 1–16 toggle Expression Mute per track  
+- Voice name labels from Bank MSB/LSB + Program Change (GM + common XG kits)
+- Mute helper row: All / 1–8 / 9–16 / Clear / Solo
+- Master Volume knob (Universal SysEx)
+- UI polish: IN/OUT LED labels, 20×20 circular LEDs, inactive button borders, amber muted channels, layout fixes
 
 ## Important: Expression Mute caveat
 
@@ -87,6 +88,14 @@ Where `ss` = `00`–`0F` for sections A–P.
 
 > Note: The official List Book shows `ss=08–0F` (likely a typo). This project uses the FAQ-confirmed `00–0F` range.
 
+### Master Volume (Universal SysEx)
+
+```
+F0 7F 7F 04 01 ll mm F7
+```
+
+14-bit volume; the UI slider sends a 0–127 value scaled to 14-bit.
+
 ### Transport
 
 - Start `FA` · Continue `FB` · Stop `FC`
@@ -118,22 +127,21 @@ Or manually:
 
 ```cmd
 call "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\Tools\VsDevCmd.bat" -arch=x64
-mkdir build & cd build
+mkdir build
+cd build
 cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release
 ninja
 ```
 
-Install the VST3 (PowerShell):
+Built plugins/standalone will be in `build\RM1xController_artefacts\`.
+
+### Install VST3 (Windows)
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File install-vst3.ps1
 ```
 
-This installs to:
-
-- `%USERPROFILE%\Documents\rm1x-controller` (project folder)  
-- `%USERPROFILE%\Documents\VST3` (Studio One / user scan path)  
-- `%CommonProgramFiles%\VST3` (system-wide; needs admin)
+This copies the VST3 into `%USERPROFILE%\Documents\VST3` (and optionally Common Files if run as Administrator).
 
 ### Linux
 
@@ -149,47 +157,35 @@ cmake -B build -G Xcode
 cmake --build build --config Release
 ```
 
-Built plugins/standalone land under `build/RM1xController_artefacts/`.
-
 ## Usage
 
-1. Launch the plugin or standalone app  
-2. Select your RM1x MIDI **Out** (and optionally **In**)  
-3. Click **ID** to verify connection  
-4. Use Section / Track / Mute rows and transport  
-5. Set tempo with the Tempo knob — ensure hardware **Sync = MIDI**  
-
-## Architecture
-
-- **JUCE 8** · VST3 + Standalone · CMake  
-- Modular MIDI protocol layer (`MIDIProtocol.cpp`)  
-- Panel component classes (`PanelComponents.cpp`)  
-- Resizable UI (min ~1000×700, scales to 2400×1600)
-
-See [ARCHITECTURE.md](ARCHITECTURE.md), [BUILD.md](BUILD.md), [TESTING.md](TESTING.md), and [MIDI-INPUT-NOTES.md](MIDI-INPUT-NOTES.md).
-
-## Out of scope for v0.1
-
-- Full LCD bitmap clone · Job menu · Event list editor  
-- Floppy/SMF librarian · True mute-memory SysEx · Deep Play FX remote · NRPN editors  
+1. Launch the standalone app or load the VST3 in your DAW  
+2. Select MIDI Output / Input for your RM1x interface  
+3. Click **Sync from RM1x** (or Identity) to verify the link  
+4. Use Section / Track / Mute (Expr) rows and mute helpers  
+5. Set hardware **Sync = MIDI** before using the Tempo (MIDI Clk) control  
 
 ## License
 
-MIT License — Copyright (c) 2026 Haris / H.K. Orasi Multimedia Ltd  
-See [LICENSE](LICENSE).
-
-Yamaha, RM1x, and related marks are trademarks of Yamaha Corporation. This project is an unofficial third-party controller and is not affiliated with or endorsed by Yamaha.
+MIT — see [LICENSE](LICENSE).
 
 ## Troubleshooting
 
-| Symptom | Check |
-|--------|--------|
-| Transport doesn’t respond | `UTILITY → MIDI → MIDI Control` = `IN` or `IN/OUT` |
-| Sections don’t change | SysEx filter enabled; hardware in Pattern or Song mode |
-| Mute not working | Expression Mute uses CC#11; track voice shouldn’t rely on Expression |
-| Tempo ignored | Hardware **Sync = MIDI** |
-| Windows MIDI conflicts | Don’t open the same physical port as both host Out and plugin direct Out |
+### Transport doesn’t respond
+- Check `UTILITY → MIDI → MIDI Control` is `IN` or `IN/OUT`
 
-## Contributing
+### Sections don’t change
+- Verify SysEx filter is enabled  
+- Hardware must be in Pattern or Song mode  
 
-Contributions welcome — especially reverse-engineered mute SysEx (if it exists), Play FX CC mappings, voice parameter maps, and UI/UX improvements.
+### Mute not working
+- Expression Mute uses CC#11; ensure the track voice isn’t heavily using Expression  
+- This is **not** true hardware mute — see caveat above  
+
+### Double / echo sound
+- Avoid opening the same physical MIDI port as both host MIDI out **and** plugin direct out  
+- Use host routing **or** plugin direct routing, not both  
+
+## Credits
+
+Developed for users with broken RM1x panels who need software control.

@@ -40,6 +40,16 @@ RM1xControllerAudioProcessorEditor::RM1xControllerAudioProcessorEditor(RM1xContr
         }
     };
     
+    audioProcessor.onPartVoiceChanged = [this](int part, const juce::String& voiceName)
+    {
+        if (muteRow)
+        {
+            muteRow->setVoiceName(part, voiceName);
+            if (!voiceName.isEmpty())
+                muteRow->setActiveState(part, true);
+        }
+    };
+    
     audioProcessor.onTrackChanged = [this](int track)
     {
         statusLabel->setText("Track " + juce::String(track + 1) + " selected on hardware", juce::dontSendNotification);
@@ -82,6 +92,7 @@ RM1xControllerAudioProcessorEditor::~RM1xControllerAudioProcessorEditor()
     audioProcessor.onMuteChanged = nullptr;
     audioProcessor.onTrackChanged = nullptr;
     audioProcessor.onDumpReceived = nullptr;
+    audioProcessor.onPartVoiceChanged = nullptr;
     
     setLookAndFeel(nullptr);
 }
@@ -98,10 +109,10 @@ void RM1xControllerAudioProcessorEditor::setupMIDISection()
     versionLabel->setColour(juce::Label::textColourId, juce::Colours::grey);
     addAndMakeVisible(versionLabel.get());
     
-    midiInLED = std::make_unique<MidiLED>("MIDI IN");
+    midiInLED = std::make_unique<MidiLED>("IN");
     addAndMakeVisible(midiInLED.get());
     
-    midiOutLED = std::make_unique<MidiLED>("MIDI OUT");
+    midiOutLED = std::make_unique<MidiLED>("OUT");
     addAndMakeVisible(midiOutLED.get());
     
     midiOutputLabel = std::make_unique<juce::Label>("label", "MIDI Output:");
@@ -306,9 +317,16 @@ void RM1xControllerAudioProcessorEditor::setupTransportSection()
     addAndMakeVisible(volumeLabel.get());
     
     volumeSlider = std::make_unique<juce::Slider>(juce::Slider::RotaryHorizontalVerticalDrag,
-                                                   juce::Slider::NoTextBox);
+                                                  juce::Slider::NoTextBox);
     volumeSlider->setRange(0, 127, 1);
     volumeSlider->setValue(100);
+    volumeSlider->onValueChange = [this]()
+    {
+        int volume = static_cast<int>(volumeSlider->getValue());
+        auto msg = RM1x::MIDIProtocol::createMasterVolume(volume);
+        audioProcessor.sendMidiMessage(msg);
+        midiOutLED->flash();
+    };
     addAndMakeVisible(volumeSlider.get());
 }
 
@@ -358,6 +376,89 @@ void RM1xControllerAudioProcessorEditor::setupKeyboardSection()
     {
         handleMuteToggle(track, muted);
     };
+    
+    // Mute helper buttons
+    muteAllButton = std::make_unique<juce::TextButton>("All");
+    muteAllButton->setTooltip("Mute all channels");
+    muteAllButton->onClick = [this]()
+    {
+        for (int i = 1; i <= 16; ++i)
+        {
+            auto msg = RM1x::MIDIProtocol::createExpressionMute(i, true);
+            audioProcessor.sendMidiMessage(msg);
+            muteRow->setMuteState(i, true);
+        }
+        midiOutLED->flash();
+        statusLabel->setText("All channels muted", juce::dontSendNotification);
+    };
+    addAndMakeVisible(muteAllButton.get());
+    
+    mute18Button = std::make_unique<juce::TextButton>("1-8");
+    mute18Button->setTooltip("Mute channels 1-8");
+    mute18Button->onClick = [this]()
+    {
+        for (int i = 1; i <= 8; ++i)
+        {
+            auto msg = RM1x::MIDIProtocol::createExpressionMute(i, true);
+            audioProcessor.sendMidiMessage(msg);
+            muteRow->setMuteState(i, true);
+        }
+        midiOutLED->flash();
+        statusLabel->setText("Channels 1-8 muted", juce::dontSendNotification);
+    };
+    addAndMakeVisible(mute18Button.get());
+    
+    mute916Button = std::make_unique<juce::TextButton>("9-16");
+    mute916Button->setTooltip("Mute channels 9-16");
+    mute916Button->onClick = [this]()
+    {
+        for (int i = 9; i <= 16; ++i)
+        {
+            auto msg = RM1x::MIDIProtocol::createExpressionMute(i, true);
+            audioProcessor.sendMidiMessage(msg);
+            muteRow->setMuteState(i, true);
+        }
+        midiOutLED->flash();
+        statusLabel->setText("Channels 9-16 muted", juce::dontSendNotification);
+    };
+    addAndMakeVisible(mute916Button.get());
+    
+    clearMuteButton = std::make_unique<juce::TextButton>("Clear");
+    clearMuteButton->setTooltip("Unmute all channels");
+    clearMuteButton->onClick = [this]()
+    {
+        for (int i = 1; i <= 16; ++i)
+        {
+            auto msg = RM1x::MIDIProtocol::createExpressionMute(i, false);
+            audioProcessor.sendMidiMessage(msg);
+            muteRow->setMuteState(i, false);
+        }
+        midiOutLED->flash();
+        statusLabel->setText("All channels unmuted", juce::dontSendNotification);
+    };
+    addAndMakeVisible(clearMuteButton.get());
+    
+    soloButton = std::make_unique<juce::TextButton>("Solo");
+    soloButton->setTooltip("Solo selected track (mutes all others)");
+    soloButton->onClick = [this]()
+    {
+        if (currentTrack >= 1 && currentTrack <= 16)
+        {
+            // Unmute solo track, mute all others
+            for (int i = 1; i <= 16; ++i)
+            {
+                bool shouldMute = (i != currentTrack);
+                auto msg = RM1x::MIDIProtocol::createExpressionMute(i, shouldMute);
+                audioProcessor.sendMidiMessage(msg);
+                muteRow->setMuteState(i, shouldMute);
+                muteRow->setSoloState(i - 1, i == currentTrack);
+            }
+            soloTrack = currentTrack - 1;
+            midiOutLED->flash();
+            statusLabel->setText("Track " + juce::String(currentTrack) + " soloed", juce::dontSendNotification);
+        }
+    };
+    addAndMakeVisible(soloButton.get());
 }
 
 void RM1xControllerAudioProcessorEditor::paint(juce::Graphics& g)
@@ -380,15 +481,15 @@ void RM1xControllerAudioProcessorEditor::resized()
     versionLabel->setBounds(titleLabel->getBounds().removeFromBottom(20).translated(5, 25));
     
     headerArea.removeFromLeft(20);
-    midiInLED->setBounds(headerArea.removeFromLeft(60));
-    headerArea.removeFromLeft(10);
-    midiOutLED->setBounds(headerArea.removeFromLeft(60));
-    headerArea.removeFromLeft(20);
+    midiInLED->setBounds(headerArea.removeFromLeft(50).removeFromTop(45).withTrimmedLeft(15).withTrimmedRight(15));
+    headerArea.removeFromLeft(5);
+    midiOutLED->setBounds(headerArea.removeFromLeft(50).removeFromTop(45).withTrimmedLeft(15).withTrimmedRight(15));
+    headerArea.removeFromLeft(15);
     
-    auto bpmArea = headerArea.removeFromLeft(160);
-    tempoLabel->setBounds(bpmArea.removeFromTop(12));
-    tempoSlider->setBounds(bpmArea.removeFromTop(70).reduced(10, 0));
-    tempoValueLabel->setBounds(bpmArea.removeFromTop(18));
+    auto bpmArea = headerArea.removeFromLeft(100);
+    tempoLabel->setBounds(bpmArea.removeFromTop(15));
+    tempoSlider->setBounds(bpmArea.removeFromTop(60).reduced(5, 0));
+    tempoValueLabel->setBounds(bpmArea);
     
     // Hidden BPM label (now shown by tempoValueLabel)
     bpmLabel->setBounds(0, 0, 0, 0);
@@ -401,9 +502,8 @@ void RM1xControllerAudioProcessorEditor::resized()
     midiOutArea.removeFromLeft(5);
     midiOutputCombo->setBounds(midiOutArea.removeFromLeft(200));
     midiOutArea.removeFromLeft(10);
-    identityButton->setBounds(midiOutArea.removeFromLeft(35));
-    midiOutArea.removeFromLeft(5);
-    loadPatternButton->setBounds(midiOutArea.removeFromLeft(155));
+    identityButton->setBounds(midiOutArea.removeFromLeft(0)); // Hidden - functionality in Sync button
+    loadPatternButton->setBounds(midiOutArea.removeFromLeft(180));
     
     auto midiInArea = midiArea.removeFromTop(25);
     midiInputLabel->setBounds(midiInArea.removeFromLeft(100));
@@ -423,20 +523,20 @@ void RM1xControllerAudioProcessorEditor::resized()
     
     bounds.removeFromTop(10);
     
-    auto knobArea = bounds.removeFromTop(100);
+    auto knobArea = bounds.removeFromTop(120);
     knobArea.reduce(10, 10);
     auto knobBankArea = knobArea.removeFromBottom(30);
     knobBankButton->setBounds(knobBankArea.removeFromLeft(150));
     knobStrip->setBounds(knobArea);
     
-    bounds.removeFromTop(20);
+    bounds.removeFromTop(10);
     
-    auto transportArea = bounds.removeFromTop(60);
+    auto transportArea = bounds.removeFromTop(90);
     transportArea.reduce(10, 10);
     
-    volumeLabel->setBounds(transportArea.removeFromLeft(100).removeFromTop(20));
-    volumeSlider->setBounds(transportArea.removeFromLeft(100).translated(-10, -10));
-    transportArea.removeFromLeft(50);
+    volumeLabel->setBounds(transportArea.removeFromLeft(120).removeFromTop(20));
+    volumeSlider->setBounds(transportArea.removeFromLeft(80).reduced(0, 10));
+    transportArea.removeFromLeft(30);
     
     playButton->setBounds(transportArea.removeFromLeft(100));
     transportArea.removeFromLeft(10);
@@ -444,10 +544,10 @@ void RM1xControllerAudioProcessorEditor::resized()
     transportArea.removeFromLeft(10);
     continueButton->setBounds(transportArea.removeFromLeft(120));
     
-    bounds.removeFromTop(20);
+    bounds.removeFromTop(10);
     
     // Main button rows - Section/Track/Mute (primary interface)
-    auto buttonRowsArea = bounds.removeFromTop(340);
+    auto buttonRowsArea = bounds; // Use remaining space
     buttonRowsArea.reduce(10, 10);
     
     sectionRow->setBounds(buttonRowsArea.removeFromTop(100));
@@ -456,7 +556,23 @@ void RM1xControllerAudioProcessorEditor::resized()
     trackRow->setBounds(buttonRowsArea.removeFromTop(100));
     buttonRowsArea.removeFromTop(10);
     
-    muteRow->setBounds(buttonRowsArea.removeFromTop(100));
+    // Mute helper buttons row (below label, above mute row)
+    auto muteHelpersArea = buttonRowsArea.removeFromTop(35);
+    int buttonWidth = 60;
+    int spacing = 5;
+    muteHelpersArea.removeFromLeft(10); // Left padding
+    muteAllButton->setBounds(muteHelpersArea.removeFromLeft(buttonWidth));
+    muteHelpersArea.removeFromLeft(spacing);
+    mute18Button->setBounds(muteHelpersArea.removeFromLeft(buttonWidth));
+    muteHelpersArea.removeFromLeft(spacing);
+    mute916Button->setBounds(muteHelpersArea.removeFromLeft(buttonWidth));
+    muteHelpersArea.removeFromLeft(spacing);
+    clearMuteButton->setBounds(muteHelpersArea.removeFromLeft(buttonWidth));
+    muteHelpersArea.removeFromLeft(spacing * 3);
+    soloButton->setBounds(muteHelpersArea.removeFromLeft(buttonWidth));
+    
+    buttonRowsArea.removeFromTop(5);
+    muteRow->setBounds(buttonRowsArea); // Use all remaining space
 }
 
 void RM1xControllerAudioProcessorEditor::timerCallback()
@@ -560,6 +676,8 @@ void RM1xControllerAudioProcessorEditor::handleMuteToggle(int track, bool muted)
 void RM1xControllerAudioProcessorEditor::handleTrackSelected(int track)
 {
     currentTrack = track;
+    if (muteRow)
+        muteRow->setSelectedTrack(track - 1); // Convert to 0-based
     deviceStatus = "Track " + juce::String(track) + " selected";
     updateStatusDisplay();
 }

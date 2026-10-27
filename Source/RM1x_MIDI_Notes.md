@@ -104,22 +104,6 @@
 - **Continue**: FB  
 - **Stop**: FC
 
-## Master Tempo Control (Hardware Verified)
-- **Implementation**: MIDI Clock (0xF8) continuous transmission at 24 PPQN
-- **Timing**: Interval = 60.0 / (BPM × 24) seconds per F8 message
-  - Example: 120 BPM = 60.0 / (120 × 24) = 0.020833 seconds = ~20.83ms per F8
-  - Implemented with juce::HighResolutionTimer for precise clock intervals
-- **BPM range**: 5-300 (RM1x standard range)
-- **Transport**: Sends Start (FA) when clock first engages, Stop (FC) when stopped
-- **UI**: Tempo knob (5-300 BPM) drives continuous MIDI Clock output
-- **Hardware Requirement**: RM1x must be set to **Sync = MIDI** (slave mode) in Utility settings
-  - When Sync = Internal, RM1x ignores external F8 clock
-  - Clock is transmitted continuously when tempo control is active
-- **Status**: Hardware verified on Music PC (USB2MIDI) - F8 rate controls RM1x BPM when in MIDI sync mode
-- **Note**: XG SysEx tempo commands (e.g. F0 43 10 4C 00 00 00...) do NOT work on RM1x
-  - Address 00 00 00 is Master Tune, not tempo
-  - RM1x requires MIDI Clock for external tempo sync
-
 ## Part Names / Labels
 **Status**: Not yet implemented in UI.
 

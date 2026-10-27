@@ -5,6 +5,21 @@ All notable changes to the RM1x Controller project will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-10-27
+
+### Added
+- Voice names: Bank MSB/LSB + Program Change → GM/XG display labels on the mute row
+- Mute helpers: All / 1–8 / 9–16 / Clear / Solo
+- Master Volume via Universal SysEx (`F0 7F 7F 04 01 ll mm F7`)
+
+### Changed
+- UI polish: MIDI LEDs labeled IN/OUT only (not port names), 20×20 circular LEDs
+- Inactive buttons draw subtle borders; muted channels show amber
+- Layout fixes for mute row / helper controls; ASCII-safe labels
+
+### Fixed
+- Broken / non-ASCII UI characters cleaned up for Windows builds
+
 ## [0.1.0] - 2026-10-26
 
 ### Added
@@ -147,4 +162,6 @@ The Yamaha RM1x MIDI specification does not document a mute SysEx command or acc
 
 ---
 
-[0.1.0]: https://github.com/rm1x/controller/releases/tag/v0.1.0
+[0.1.0]: https://github.com/harisk73/rm1x-controller/releases/tag/v0.1.0
+
+[0.2.0]: https://github.com/harisk73/rm1x-controller/releases/tag/v0.2.0

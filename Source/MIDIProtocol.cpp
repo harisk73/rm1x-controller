@@ -157,4 +157,28 @@ juce::String MIDIProtocol::getIdentityInfo(const juce::MidiMessage& msg)
     return "Unknown device";
 }
 
+juce::MidiMessage MIDIProtocol::createMasterVolume(int value)
+{
+    // Universal SysEx Master Volume: F0 7F 7F 04 01 ll mm F7
+    // Value is 14-bit (0-16383), sent as LSB (ll) and MSB (mm)
+    // Convert 7-bit value (0-127) to 14-bit
+    int value14bit = juce::jlimit(0, 127, value) * 128; // Scale to 14-bit range
+    
+    juce::uint8 lsb = value14bit & 0x7F;
+    juce::uint8 msb = (value14bit >> 7) & 0x7F;
+    
+    juce::uint8 sysexData[] = {
+        0xF0,
+        0x7F,   // Universal SysEx ID
+        0x7F,   // Device ID (broadcast to all)
+        0x04,   // Sub-ID #1 (Device Control)
+        0x01,   // Sub-ID #2 (Master Volume)
+        lsb,    // Volume LSB
+        msb,    // Volume MSB
+        0xF7
+    };
+    
+    return juce::MidiMessage(sysexData, sizeof(sysexData));
+}
+
 } // namespace RM1x

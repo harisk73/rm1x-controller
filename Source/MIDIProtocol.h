@@ -42,6 +42,7 @@ public:
     static juce::MidiMessage createReverb(int channel, int value);
     static juce::MidiMessage createChorus(int channel, int value);
     static juce::MidiMessage createPan(int channel, int value);
+    static juce::MidiMessage createMasterVolume(int value); // 0-127, sent as 14-bit
     
     static bool isIdentityReply(const juce::MidiMessage& msg);
     static juce::String getIdentityInfo(const juce::MidiMessage& msg);
