@@ -172,10 +172,10 @@ The Yamaha RM1x MIDI specification does not document a mute SysEx command or acc
 
 ---
 
-[0.1.0]: https://github.com/harisk73/rm1x-controller/releases/tag/v0.1.0
+[0.1.0]: https://github.com/orasimu/rm1x-controller/releases/tag/v0.1.0
 
-[0.2.2]: https://github.com/harisk73/rm1x-controller/releases/tag/v0.2.2
+[0.2.2]: https://github.com/orasimu/rm1x-controller/releases/tag/v0.2.2
 
-[0.2.1]: https://github.com/harisk73/rm1x-controller/releases/tag/v0.2.1
+[0.2.1]: https://github.com/orasimu/rm1x-controller/releases/tag/v0.2.1
 
-[0.2.0]: https://github.com/harisk73/rm1x-controller/releases/tag/v0.2.0
+[0.2.0]: https://github.com/orasimu/rm1x-controller/releases/tag/v0.2.0

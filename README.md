@@ -14,7 +14,7 @@ A JUCE 8 VST3 + Standalone application that provides a software remote controlle
 
 ## Downloads
 
-Prebuilt **Windows x64** Standalone and VST3: **[Releases](https://github.com/harisk73/rm1x-controller/releases)** · **[v0.2.2](https://github.com/harisk73/rm1x-controller/releases/tag/v0.2.2)**
+Prebuilt **Windows x64** Standalone and VST3: **[Releases](https://github.com/orasimu/rm1x-controller/releases)** · **[v0.2.2](https://github.com/orasimu/rm1x-controller/releases/tag/v0.2.2)**
 
 - Standalone: unzip and run `RM1x Controller.exe`
 - VST3: unzip `RM1x Controller.vst3` into a VST3 folder (e.g. `%USERPROFILE%\Documents\VST3`) and rescan in your DAW
